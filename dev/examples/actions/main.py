@@ -1,4 +1,4 @@
-from componenter.component import ComponentConfig, Components
+from componenter.component import Components
 from dev.examples.actions.components import NoChangeRunner, MethodExecutor, ValidationExecutor, ExecutionChain
 from dev.examples.actions.configs import (
     RunnerComponents,

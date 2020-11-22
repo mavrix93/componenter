@@ -1,4 +1,5 @@
-from typing import Optional, Type, Generic, TypeVar, NamedTuple, Any
+import abc
+from typing import Type, Generic, TypeVar, Any
 
 from pydantic import BaseModel
 
@@ -17,13 +18,16 @@ class Components(BaseModel):
         arbitrary_types_allowed = True
 
 
-class Component(Generic[ComponentConfigT, ComponentsT]):
-    def __init__(self, components: ComponentsT, config: ComponentConfigT):
-        self.config = config
-        self.components: ComponentsT = components
+class Component(Generic[ComponentConfigT, ComponentsT], BaseModel, abc.ABC):
+    config: ComponentConfigT
+    components: ComponentsT
+
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+        cls.update_forward_refs()
 
     def __getitem__(self, item: Type[ComponentOrProtocolT]) -> ComponentOrProtocolT:
-        for component in self.components.dict().values():
+        for component in self.components.__dict__.values():
             if isinstance(component, item):
                 return component
         raise KeyError

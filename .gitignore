@@ -52,3 +52,6 @@ ENV/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# Pycharm
+.idea/
