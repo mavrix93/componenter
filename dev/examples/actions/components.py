@@ -1,6 +1,6 @@
 from typing import Any
 
-from componenter.component import Component, ComponentConfigT, ComponentsT
+from componenter.component import Component, ComponentConfigT, ComponentsT, Components, ComponentConfig
 from dev.examples.actions.configs import (
     RunnerComponents,
     RunnerConfig,
@@ -16,12 +16,12 @@ class Executor(Component[ComponentConfigT, ComponentsT], IExecutor):
         pass
 
 
-class MethodExecutor(Executor[MethodExecutorConfig, None], IExecutor):
+class MethodExecutor(Executor[MethodExecutorConfig, Components], IExecutor):
     def execute(self, **kwargs) -> Any:
         return self.config.method(**kwargs)
 
 
-class ValidationExecutor(Executor[MethodValidationExecutorConfig, None], IExecutor):
+class ValidationExecutor(Executor[MethodValidationExecutorConfig, Components], IExecutor):
     def execute(self, **kwargs):
         if not self.config.method(**kwargs):
             raise ValueError("Validation failed for {} with {}".format(self.__class__, kwargs))
@@ -33,7 +33,7 @@ class NoChangeRunner(Component[RunnerConfig, RunnerComponents], IRunner):
         return data
 
 
-class ExecutionChain(Component[None, ExecutionChainComponents], IExecutionChain):
+class ExecutionChain(Component[ComponentConfig, ExecutionChainComponents], IExecutionChain):
     def run_chain(self, data: DataContainer) -> DataContainer:
         for runner in self.components.runners:
             data = runner.run(data)

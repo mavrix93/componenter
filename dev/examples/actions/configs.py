@@ -1,23 +1,24 @@
-from typing import NamedTuple, Callable, Any, List
+from typing import Callable, Any, List
 
+from componenter.component import ComponentConfig, Components
 from dev.examples.actions.types import IExecutor, IRunner
 
 
-class MethodExecutorConfig(NamedTuple):
+class MethodExecutorConfig(ComponentConfig):
     method: Callable[..., Any]
 
 
-class MethodValidationExecutorConfig(NamedTuple):
+class MethodValidationExecutorConfig(ComponentConfig):
     method: Callable[..., bool]
 
 
-class RunnerComponents(NamedTuple):
+class RunnerComponents(Components):
     executor: IExecutor
 
 
-class RunnerConfig(NamedTuple):
+class RunnerConfig(ComponentConfig):
     name: str
 
 
-class ExecutionChainComponents(NamedTuple):
+class ExecutionChainComponents(Components):
     runners: List[IRunner]
