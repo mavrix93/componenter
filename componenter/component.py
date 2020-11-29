@@ -1,49 +1,48 @@
 import abc
-from typing import Type, Generic, TypeVar, Any, List, Optional, ClassVar, Tuple
+from typing import Type, Generic, TypeVar, Any, List, Optional, ClassVar, Tuple, Sequence, Union
 
 from pydantic import BaseModel, validator
 from pydantic.main import ModelMetaclass
 
-ComponentConfigT = TypeVar("ComponentConfigT", bound="ComponentConfig")
+from componenter.utils import unwrap_type
+
 ComponentT = TypeVar("ComponentT", bound="Component")
-ComponentsT = TypeVar("ComponentsT", bound="Components")
+ComponentsT = TypeVar("ComponentsT", bound=Sequence)
 ComponentOrProtocolT = TypeVar("ComponentOrProtocolT", "Component", Any)
 
 
-class ComponentConfig(BaseModel):
-    pass
-
-
 class ComponentMeta(ModelMetaclass):
-    _component_classes: ClassVar[Tuple[Type["Component"]]]
+    _component_classes: ClassVar[Sequence[Type["Component"]]]
 
-    def __new__(mcs, name, bases, class_attributes, components: Optional[Tuple[Type["Component"]]] = None):
-        return super().__new__(mcs, name, bases, {**class_attributes, "_component_classes": components or []})
+    def __new__(mcs, name, bases, class_attributes, components: Sequence[Type["Component"]] = ()):
+        return super().__new__(mcs, name, bases, {**class_attributes, "_component_classes": components})
 
     @classmethod
-    def create(mcs: type, name: str, components: Tuple[Type["Component"]]) -> "ComponentMeta":
+    def create(mcs: type, name: str, components: Sequence[Type["Component"]]) -> "ComponentMeta":
         return mcs(name, (object,), {}, components=components)
 
 
-class Components(BaseModel):
-    class Config:
-        arbitrary_types_allowed = True
+class Component(Generic[ComponentsT], BaseModel, abc.ABC, metaclass=ComponentMeta):
+    components: Union[ComponentsT, tuple] = ()
 
+    @validator("components")
+    def correct_components(cls, components: ComponentsT):
+        n_len = len(cls._component_classes)
 
-class Component(Generic[ComponentConfigT, ComponentsT], BaseModel, abc.ABC, metaclass=ComponentMeta):
-    config: Optional[ComponentConfigT] = None
-    components: Optional[ComponentsT] = None
-
-    # @validator("components")
-    # def valid_components(cls, component_config: Components):
-    #     components = component_config.__dict__.values()
-    #
-    #     for component_cls in cls._component_classes:
-    #         if not (any(isinstance(component, component_cls) for component in components)):
-    #             raise ValueError(
-    #                 "Component class {} was not found among provided components: {}".format(component_cls, components)
-    #             )
-    #     return component_config
+        if not n_len == len(components):
+            raise ValueError(
+                "Number of expected components ({}) doesn't match the provided number of components ({})".format(
+                    n_len, len(components)
+                )
+            )
+        for i in range(n_len):
+            if not isinstance(components[i], unwrap_type(cls._component_classes[i])):
+                raise ValueError(
+                    "Component class {} was not found among provided components: {}".format(
+                        cls._component_classes[i], components[i]
+                    )
+                )
+        return components
 
     class Config:
         arbitrary_types_allowed = True
@@ -53,7 +52,7 @@ class Component(Generic[ComponentConfigT, ComponentsT], BaseModel, abc.ABC, meta
         cls.update_forward_refs()
 
     def __getitem__(self, item: Type[ComponentOrProtocolT]) -> ComponentOrProtocolT:
-        for component in self.components.__dict__.values():
+        for component in self.components or []:
             if isinstance(component, item):
                 return component
         raise KeyError
