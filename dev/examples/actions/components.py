@@ -27,7 +27,7 @@ class ValidationExecutor(Executor[MethodValidationExecutorConfig, Components], I
             raise ValueError("Validation failed for {} with {}".format(self.__class__, kwargs))
 
 
-class NoChangeRunner(Component[RunnerConfig, RunnerComponents], IRunner):
+class NoChangeRunner(Component[RunnerConfig, RunnerComponents], IRunner, components=[IExecutor]):
     def run(self, data: DataContainer) -> DataContainer:
         self.components.executor.execute(**data.dict())
         return data
