@@ -1,4 +1,4 @@
-from asyncio import get_event_loop
+from typing import Protocol, runtime_checkable
 
 from dev.examples.execution.components import (
     SyncExecutor,
@@ -7,8 +7,8 @@ from dev.examples.execution.components import (
     ToJsonParsing,
     AsyncExecutor,
     TaskMethodExecutor,
+    EventLoopProvider,
 )
-from dev.examples.execution.types import ExecutorT, ResultParserT
 
 if __name__ == "__main__":
 
@@ -18,19 +18,26 @@ if __name__ == "__main__":
     async def async_make_sum(data: dict) -> dict:
         return dict(data, z=data["x"] + data["y"])
 
-    result1 = SyncExecutor(components=(PrintLogger(), NoParsing())).run(task=make_sum, data=[{"x": 1, "y": 3}])
+    sync_executor = SyncExecutor[dict, dict](components=(PrintLogger(), NoParsing()))
+    result1 = sync_executor.run(task=make_sum, data=[{"x": 1, "y": 3}])
 
-    result2 = AsyncExecutor(components=(PrintLogger(), ToJsonParsing()), loop=get_event_loop()).run(
+    @runtime_checkable
+    class LogLike(Protocol):
+        def log(self):
+            pass
+
+    print(sync_executor[LogLike])
+
+    result2 = AsyncExecutor[dict, str](components=(PrintLogger(), ToJsonParsing(), EventLoopProvider())).run(
         task=async_make_sum, data=[{"x": 1, "y": 3}, {"x": 14, "y": 43}, {"x": 31, "y": 23}]
     )
 
-    print(result2)
-
-    class SumTaskMethodExecutor(TaskMethodExecutor, components=(ExecutorT,)):
+    class SumTaskMethodExecutor(
+        TaskMethodExecutor[dict, dict],
+    ):
         def task_method(self, data: dict) -> dict:
             return dict(data, z=data["x"] + data["y"])
 
     result3 = SumTaskMethodExecutor(components=(SyncExecutor(components=(PrintLogger(), NoParsing())),)).run(
         data=[{"x": 144, "y": 443}, {"x": 314, "y": 243}]
     )
-    print(result3)

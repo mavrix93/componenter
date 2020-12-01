@@ -1,5 +1,6 @@
 import abc
-from typing import Protocol, TypeVar, Generic, NoReturn, List
+from asyncio import AbstractEventLoop
+from typing import TypeVar, Generic, NoReturn, List
 
 TaskT = TypeVar("TaskT")
 DataT = TypeVar("DataT")
@@ -22,3 +23,9 @@ class LoggerT(Generic[DataT], abc.ABC):
     @abc.abstractmethod
     def log(self, data: DataT) -> NoReturn:
         pass
+
+
+class EventLoopProviderT(abc.ABC):
+    @abc.abstractmethod
+    def get_event_loop(self) -> AbstractEventLoop:
+        ...

@@ -3,8 +3,20 @@ from typing import TypeVar, Tuple, Generic, NamedTuple
 T = TypeVar("T")
 
 
+class BB:
+    pass
+
+
+class CC(BB):
+    pass
+
+
+class DD:
+    pass
+
+
 class A(Generic[T]):
-    def __init__(self, value: Tuple[str, T]):
+    def __init__(self, value: Tuple[str, T, BB]):
         self.value = value
 
     def get(self) -> T:
@@ -16,5 +28,5 @@ class InpType(NamedTuple):
     second: dict
 
 
-aa = A(("vvv", {}))
+aa = A(("vvv", {}, CC()))
 x = aa.get()
