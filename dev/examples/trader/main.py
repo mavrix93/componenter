@@ -1,18 +1,46 @@
 from typing import List
 
+from componenter.component import Component
 from dev.examples.trader.components import (
     Broker,
     DummyMarketDataProvider,
     AlwaysBuyDecider,
     NothingToExecute,
-    DummyMarketData,
     MarketDataQuery,
+    ValueTimeData,
+    EvaluatePredictionDecider,
+    ReverseHistoryPredictor,
+    ThresholdEvaluator,
+    ReverseTransformer,
+    MeanGradientTransformer,
+    SimpleNumericScore,
 )
 
 # IDEA: Use set instead of tuple. Can it be type checked?
 if __name__ == "__main__":
-    broker = Broker[MarketDataQuery, List[DummyMarketData], bool, str](
-        components=(DummyMarketDataProvider(), AlwaysBuyDecider(), NothingToExecute())
+    print(
+        "dummy",
+        Broker[MarketDataQuery, ValueTimeData, bool, str](
+            components=(DummyMarketDataProvider(), AlwaysBuyDecider(), NothingToExecute())
+        ).think_and_act(market="some-marker"),
     )
-    result = broker.think_and_act(market="some-marker")
-    print(result)
+
+    ReverseHistoryPredictor[ValueTimeData, SimpleNumericScore](
+        components=(ReverseTransformer(), MeanGradientTransformer())
+    )
+
+    print(
+        "reverse mean",
+        Broker[MarketDataQuery, ValueTimeData, bool, str](
+            components=(
+                DummyMarketDataProvider(),
+                EvaluatePredictionDecider(
+                    components=(
+                        ReverseHistoryPredictor(components=(ReverseTransformer(), MeanGradientTransformer())),
+                        ThresholdEvaluator(),
+                    )
+                ),
+                NothingToExecute(),
+            )
+        ),
+    )
